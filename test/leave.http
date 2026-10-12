@@ -1,0 +1,125 @@
+### Day 2 smoke tests (VS Code REST Client / BAS). Start the app with: cds watch
+@host = http://localhost:4004/leave
+@annual = 30000000-0000-4000-8000-000000000001
+@unpaid = 30000000-0000-4000-8000-000000000003
+
+############ EMPLOYEE: priya.nair@company.com ############
+
+### Who am I?
+GET {{host}}/me()
+Authorization: Basic priya.nair@company.com pass
+
+### My requests (only her own)
+GET {{host}}/MyRequests?$orderby=startDate
+Authorization: Basic priya.nair@company.com pass
+
+### My balances (daysRemaining is calculated)
+GET {{host}}/Balances?$expand=leaveType($select=name)
+Authorization: Basic priya.nair@company.com pass
+
+### OK - 3 working days (Dec 7-9)
+POST {{host}}/MyRequests
+Authorization: Basic priya.nair@company.com pass
+Content-Type: application/json
+
+{ "leaveType_ID": "{{annual}}", "startDate": "2026-12-07", "endDate": "2026-12-09", "comment": "Family event" }
+
+### FAIL - end before start (400)
+POST {{host}}/MyRequests
+Authorization: Basic priya.nair@company.com pass
+Content-Type: application/json
+
+{ "leaveType_ID": "{{annual}}", "startDate": "2026-12-10", "endDate": "2026-12-08" }
+
+### FAIL - weekend only (400)
+POST {{host}}/MyRequests
+Authorization: Basic priya.nair@company.com pass
+Content-Type: application/json
+
+{ "leaveType_ID": "{{annual}}", "startDate": "2026-12-12", "endDate": "2026-12-13" }
+
+### FAIL - not enough leave left (400)
+POST {{host}}/MyRequests
+Authorization: Basic priya.nair@company.com pass
+Content-Type: application/json
+
+{ "leaveType_ID": "{{annual}}", "startDate": "2026-12-15", "endDate": "2026-12-31" }
+
+### FAIL - overlaps her pending request of Nov 16-19 (409)
+POST {{host}}/MyRequests
+Authorization: Basic priya.nair@company.com pass
+Content-Type: application/json
+
+{ "leaveType_ID": "{{annual}}", "startDate": "2026-11-17", "endDate": "2026-11-18" }
+
+### OK - unpaid has no balance check
+POST {{host}}/MyRequests
+Authorization: Basic priya.nair@company.com pass
+Content-Type: application/json
+
+{ "leaveType_ID": "{{unpaid}}", "startDate": "2027-01-04", "endDate": "2027-01-29" }
+
+### FAIL - employee cannot change a request (403)
+PATCH {{host}}/MyRequests(50000000-0000-4000-8000-000000000022)
+Authorization: Basic priya.nair@company.com pass
+Content-Type: application/json
+
+{ "comment": "edited" }
+
+### FAIL - employee cannot see the manager entity (403)
+GET {{host}}/TeamRequests
+Authorization: Basic priya.nair@company.com pass
+
+############ MANAGER: arjun.rao@company.com ############
+
+### Pending requests of his team (Priya, Rohan, Ananya)
+GET {{host}}/TeamRequests?$filter=status eq 'PENDING'&$expand=employee($select=fullName),leaveType($select=name)
+Authorization: Basic arjun.rao@company.com pass
+
+### FAIL - reject without a reason (400)
+POST {{host}}/TeamRequests(50000000-0000-4000-8000-000000000022)/LeaveService.rejectRequest
+Authorization: Basic arjun.rao@company.com pass
+Content-Type: application/json
+
+{}
+
+### Approve Priya's Nov 16-19 request
+POST {{host}}/TeamRequests(50000000-0000-4000-8000-000000000022)/LeaveService.approveRequest
+Authorization: Basic arjun.rao@company.com pass
+Content-Type: application/json
+
+{}
+
+### FAIL - decide the same request again (409, immutable)
+POST {{host}}/TeamRequests(50000000-0000-4000-8000-000000000022)/LeaveService.approveRequest
+Authorization: Basic arjun.rao@company.com pass
+Content-Type: application/json
+
+{}
+
+### Reject Rohan's Dec request with a reason
+POST {{host}}/TeamRequests(50000000-0000-4000-8000-000000000026)/LeaveService.rejectRequest
+Authorization: Basic arjun.rao@company.com pass
+Content-Type: application/json
+
+{ "reason": "Release freeze in December, please pick another week" }
+
+### FAIL - a manager of another department (403)
+POST {{host}}/TeamRequests(50000000-0000-4000-8000-000000000016)/LeaveService.approveRequest
+Authorization: Basic vikram.singh@company.com pass
+Content-Type: application/json
+
+{}
+
+############ HR: meera.iyer@company.com ############
+
+### HR sees every balance
+GET {{host}}/Balances?$count=true&$top=5
+Authorization: Basic meera.iyer@company.com pass
+
+### Meera is the manager of the department heads: approve Arjun's December leave
+POST {{host}}/TeamRequests(50000000-0000-4000-8000-000000000031)/LeaveService.approveRequest
+Authorization: Basic meera.iyer@company.com pass
+Content-Type: application/json
+
+{}

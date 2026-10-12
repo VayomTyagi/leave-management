@@ -1,0 +1,19 @@
+{
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.Manager",
+      "description": "Manager"
+    },
+    {
+      "name": "$XSAPPNAME.HR",
+      "description": "HR"
+    },
+    {
+      "name": "$XSAPPNAME.Employee",
+      "description": "Employee"
+    }
+  ],
+  "attributes": [],
+  "role-templates": [],
+  "authorities-inheritance": false
+}

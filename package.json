@@ -1,0 +1,86 @@
+{
+  "name": "leave-management",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@cap-js/hana": "^3",
+    "@sap/cds": "^10",
+    "@sap/xssec": "^4"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^3",
+    "@sap/cds-dk": "^10"
+  },
+  "scripts": {
+    "start": "cds-serve"
+  },
+  "private": true,
+  "cds": {
+    "requires": {
+      "auth": {
+        "kind": "mocked",
+        "users": {
+          "priya.nair@company.com": {
+            "password": "pass",
+            "roles": [
+              "Employee"
+            ]
+          },
+          "rohan.gupta@company.com": {
+            "password": "pass",
+            "roles": [
+              "Employee"
+            ]
+          },
+          "arjun.rao@company.com": {
+            "password": "pass",
+            "roles": [
+              "Employee",
+              "Manager"
+            ]
+          },
+          "vikram.singh@company.com": {
+            "password": "pass",
+            "roles": [
+              "Employee",
+              "Manager"
+            ]
+          },
+          "divya.reddy@company.com": {
+            "password": "pass",
+            "roles": [
+              "Employee"
+            ]
+          },
+          "kavita.menon@company.com": {
+            "password": "pass",
+            "roles": [
+              "Employee",
+              "Manager"
+            ]
+          },
+          "pooja.shah@company.com": {
+            "password": "pass",
+            "roles": [
+              "Employee",
+              "HR"
+            ]
+          },
+          "meera.iyer@company.com": {
+            "password": "pass",
+            "roles": [
+              "Employee",
+              "Manager",
+              "HR"
+            ]
+          }
+        }
+      },
+      "[production]": {
+        "auth": {
+          "kind": "xsuaa"
+        }
+      }
+    }
+  }
+}
