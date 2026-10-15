@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Calculation:scenario xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:Calculation="http://www.sap.com/ndb/BiModelCalculation.ecore" id="CV_USAGE_DEPT_TYPE" applyPrivilegeType="NONE" dataCategory="CUBE" schemaVersion="3.0" hierarchyGeneration="SQL" outputViewType="Aggregation" cacheInvalidationPeriod="NONE" enforceSqlExecution="true" application="BAS">
+<descriptions defaultDescription="CV_USAGE_DEPT_TYPE"/>
+<localVariables/>
+<variableMappings/>
+<dataSources>
+  <DataSource id="LEAVEMANAGEMENT_DB_LEAVEREQUESTS">
+    <resourceUri>LEAVEMANAGEMENT_DB_LEAVEREQUESTS</resourceUri>
+  </DataSource>
+  <DataSource id="LEAVEMANAGEMENT_DB_EMPLOYEES">
+    <resourceUri>LEAVEMANAGEMENT_DB_EMPLOYEES</resourceUri>
+  </DataSource>
+  <DataSource id="LEAVEMANAGEMENT_DB_DEPARTMENTS">
+    <resourceUri>LEAVEMANAGEMENT_DB_DEPARTMENTS</resourceUri>
+  </DataSource>
+  <DataSource id="LEAVEMANAGEMENT_DB_LEAVETYPES">
+    <resourceUri>LEAVEMANAGEMENT_DB_LEAVETYPES</resourceUri>
+  </DataSource>
+</dataSources>
+<snapshotProcedures/>
+<calculationViews>
+  <calculationView xsi:type="Calculation:ProjectionView" id="Projection_Request" filterExpressionLanguage="SQL">
+    <viewAttributes>
+      <viewAttribute id="REQUEST_ID"/>
+      <viewAttribute id="EMPLOYEE_ID"/>
+      <viewAttribute id="LEAVETYPE_ID"/>
+      <viewAttribute id="STARTDATE"/>
+      <viewAttribute id="LEAVEDAYS"/>
+      <viewAttribute id="STATUS"/>
+    </viewAttributes>
+    <calculatedViewAttributes>
+      <calculatedViewAttribute id="LEAVEYEAR" datatype="INTEGER" expressionLanguage="SQL">
+        <formula>year(&quot;STARTDATE&quot;)</formula>
+      </calculatedViewAttribute>
+    </calculatedViewAttributes>
+    <input node="LEAVEMANAGEMENT_DB_LEAVEREQUESTS">
+      <mapping xsi:type="Calculation:AttributeMapping" target="REQUEST_ID" source="ID"/>
+    </input>
+    <filter>&quot;STATUS&quot; = 'APPROVED'</filter>
+  </calculationView>
+  <calculationView xsi:type="Calculation:JoinView" id="Join_1" cardinality="CN_N" joinType="inner">
+    <viewAttributes>
+      <viewAttribute id="REQUEST_ID"/>
+      <viewAttribute id="LEAVETYPE_ID"/>
+      <viewAttribute id="LEAVEDAYS" aggregationType="sum"/>
+      <viewAttribute id="LEAVEYEAR" aggregationType="sum"/>
+      <viewAttribute id="DEPARTMENT_ID"/>
+      <viewAttribute hidden="true" id="JOIN$EMPLOYEE_ID$ID"/>
+    </viewAttributes>
+    <calculatedViewAttributes/>
+    <input node="Projection_Request">
+      <mapping xsi:type="Calculation:AttributeMapping" target="REQUEST_ID" source="REQUEST_ID"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="LEAVETYPE_ID" source="LEAVETYPE_ID"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="LEAVEDAYS" source="LEAVEDAYS"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="LEAVEYEAR" source="LEAVEYEAR"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$EMPLOYEE_ID$ID" source="EMPLOYEE_ID"/>
+    </input>
+    <input node="LEAVEMANAGEMENT_DB_EMPLOYEES">
+      <mapping xsi:type="Calculation:AttributeMapping" target="DEPARTMENT_ID" source="DEPARTMENT_ID"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$EMPLOYEE_ID$ID" source="ID"/>
+    </input>
+    <joinAttribute name="JOIN$EMPLOYEE_ID$ID"/>
+  </calculationView>
+  <calculationView xsi:type="Calculation:JoinView" id="Join_2" cardinality="CN_N" joinType="inner">
+    <viewAttributes>
+      <viewAttribute id="REQUEST_ID"/>
+      <viewAttribute id="LEAVETYPE_ID"/>
+      <viewAttribute id="LEAVEDAYS" aggregationType="sum"/>
+      <viewAttribute id="LEAVEYEAR" aggregationType="sum"/>
+      <viewAttribute id="DEPARTMENT_NAME"/>
+      <viewAttribute hidden="true" id="JOIN$DEPARTMENT_ID$ID"/>
+    </viewAttributes>
+    <calculatedViewAttributes/>
+    <input node="Join_1">
+      <mapping xsi:type="Calculation:AttributeMapping" target="REQUEST_ID" source="REQUEST_ID"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="LEAVETYPE_ID" source="LEAVETYPE_ID"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="LEAVEDAYS" source="LEAVEDAYS"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="LEAVEYEAR" source="LEAVEYEAR"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$DEPARTMENT_ID$ID" source="DEPARTMENT_ID"/>
+    </input>
+    <input node="LEAVEMANAGEMENT_DB_DEPARTMENTS">
+      <mapping xsi:type="Calculation:AttributeMapping" target="DEPARTMENT_NAME" source="NAME"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$DEPARTMENT_ID$ID" source="ID"/>
+    </input>
+    <joinAttribute name="JOIN$DEPARTMENT_ID$ID"/>
+  </calculationView>
+  <calculationView xsi:type="Calculation:JoinView" id="Join_3" cardinality="CN_N" joinType="inner">
+    <viewAttributes>
+      <viewAttribute id="REQUEST_ID"/>
+      <viewAttribute id="LEAVEDAYS" aggregationType="sum"/>
+      <viewAttribute id="LEAVEYEAR" aggregationType="sum"/>
+      <viewAttribute id="DEPARTMENT_NAME"/>
+      <viewAttribute id="LEAVETYPE_NAME"/>
+      <viewAttribute hidden="true" id="JOIN$LEAVETYPE_ID$ID"/>
+    </viewAttributes>
+    <calculatedViewAttributes/>
+    <input node="Join_2">
+      <mapping xsi:type="Calculation:AttributeMapping" target="REQUEST_ID" source="REQUEST_ID"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="LEAVEDAYS" source="LEAVEDAYS"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="LEAVEYEAR" source="LEAVEYEAR"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="DEPARTMENT_NAME" source="DEPARTMENT_NAME"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$LEAVETYPE_ID$ID" source="LEAVETYPE_ID"/>
+    </input>
+    <input node="LEAVEMANAGEMENT_DB_LEAVETYPES">
+      <mapping xsi:type="Calculation:AttributeMapping" target="LEAVETYPE_NAME" source="NAME"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$LEAVETYPE_ID$ID" source="ID"/>
+    </input>
+    <joinAttribute name="JOIN$LEAVETYPE_ID$ID"/>
+  </calculationView>
+</calculationViews>
+
+<logicalModel id="Join_3">
+  <attributes>
+    <attribute id="DEPARTMENT_NAME" order="1" displayAttribute="false" attributeHierarchyActive="false">
+      <descriptions defaultDescription="NAME"/>
+      <keyMapping columnObjectName="Join_3" columnName="DEPARTMENT_NAME"/>
+    </attribute>
+    <attribute id="LEAVETYPE_NAME" order="2" displayAttribute="false" attributeHierarchyActive="false">
+      <descriptions defaultDescription="NAME"/>
+      <keyMapping columnObjectName="Join_3" columnName="LEAVETYPE_NAME"/>
+    </attribute>
+    <attribute id="REQUEST_COUNT" order="5" displayAttribute="false" attributeHierarchyActive="false">
+      <descriptions defaultDescription="ID"/>
+      <keyMapping columnObjectName="Join_3" columnName="REQUEST_ID"/>
+    </attribute>
+  </attributes>
+  <calculatedAttributes/>
+  <baseMeasures>
+    <measure id="LEAVEYEAR" order="3" aggregationType="sum" measureType="simple">
+      <descriptions defaultDescription="LEAVEYEAR"/>
+      <measureMapping columnObjectName="Join_3" columnName="LEAVEYEAR"/>
+      <exceptionAggregationMetadata/>
+    </measure>
+    <measure id="DAYS_TAKEN" order="4" aggregationType="sum" measureType="simple">
+      <descriptions defaultDescription="LEAVEDAYS"/>
+      <measureMapping columnObjectName="Join_3" columnName="LEAVEDAYS"/>
+      <exceptionAggregationMetadata/>
+    </measure>
+  </baseMeasures>
+  <calculatedMeasures/>
+  <restrictedMeasures/>
+  <localDimensions/>
+</logicalModel>
+<layout>
+  <shapes>
+    <shape expanded="true" modelObjectName="Output" modelObjectNameSpace="MeasureGroup">
+      <upperLeftCorner x="92" y="112"/>
+    
+      <rectangleSize width="160"/>
+    </shape>
+    
+  
+    <shape expanded="true" modelObjectName="Projection_Request" modelObjectNameSpace="CalculationView">
+      <upperLeftCorner x="92" y="637"/>
+      <rectangleSize height="30" width="160"/>
+    </shape>
+    <shape expanded="true" modelObjectName="Join_1" modelObjectNameSpace="CalculationView">
+      <upperLeftCorner x="92" y="497"/>
+      <rectangleSize height="30" width="160"/>
+    </shape>
+    <shape modelObjectName="Projection_Request" modelObjectNameSpace="Join_1" modelObjectType="JoinNodeInput">
+      <upperLeftCorner x="20" y="30"/>
+      <rectangleSize width="186"/>
+    </shape>
+    <shape modelObjectName="LEAVEMANAGEMENT_DB_EMPLOYEES" modelObjectNameSpace="Join_1" modelObjectType="JoinNodeInput">
+      <upperLeftCorner x="320" y="30"/>
+      <rectangleSize width="295"/>
+    </shape>
+    <shape expanded="true" modelObjectName="Join_2" modelObjectNameSpace="CalculationView">
+      <upperLeftCorner x="92" y="357"/>
+      <rectangleSize height="30" width="160"/>
+    </shape>
+    <shape modelObjectName="Join_1" modelObjectNameSpace="Join_2" modelObjectType="JoinNodeInput">
+      <upperLeftCorner x="20" y="30"/>
+      <rectangleSize width="197"/>
+    </shape>
+    <shape modelObjectName="LEAVEMANAGEMENT_DB_DEPARTMENTS" modelObjectNameSpace="Join_2" modelObjectType="JoinNodeInput">
+      <upperLeftCorner x="320" y="30"/>
+      <rectangleSize width="311"/>
+    </shape>
+    <shape expanded="true" modelObjectName="Join_3" modelObjectNameSpace="CalculationView">
+      <upperLeftCorner x="92" y="217"/>
+      <rectangleSize height="30" width="160"/>
+    </shape>
+    <shape modelObjectName="Join_2" modelObjectNameSpace="Join_3" modelObjectType="JoinNodeInput">
+      <upperLeftCorner x="20" y="30"/>
+      <rectangleSize width="218"/>
+    </shape>
+    <shape modelObjectName="LEAVEMANAGEMENT_DB_LEAVETYPES" modelObjectNameSpace="Join_3" modelObjectType="JoinNodeInput">
+      <upperLeftCorner x="320" y="30"/>
+      <rectangleSize width="299"/>
+    </shape>
+  </shapes>
+</layout>
+</Calculation:scenario>

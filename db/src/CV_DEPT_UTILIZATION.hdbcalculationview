@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Calculation:scenario xmlns:Calculation="http://www.sap.com/ndb/BiModelCalculation.ecore" id="CV_DEPT_UTILIZATION" applyPrivilegeType="NONE" dataCategory="CUBE" schemaVersion="3.0" hierarchyGeneration="SQL" outputViewType="Aggregation" cacheInvalidationPeriod="NONE" enforceSqlExecution="true" application="BAS">
+<descriptions defaultDescription="CV_DEPT_UTILIZATION"/>
+<localVariables/>
+<variableMappings/>
+<dataSources>
+  <DataSource id="CV_LEAVE_BALANCE">
+    <resourceUri>CV_LEAVE_BALANCE</resourceUri>
+  </DataSource>
+</dataSources>
+<snapshotProcedures/>
+<calculationViews/>
+
+<logicalModel id="CV_LEAVE_BALANCE">
+  <attributes>
+    <attribute id="DEPARTEMENT_NAME" order="1" displayAttribute="false" attributeHierarchyActive="false">
+      <descriptions defaultDescription="NAME"/>
+      <keyMapping columnObjectName="CV_LEAVE_BALANCE" columnName="DEPARTEMENT_NAME"/>
+    </attribute>
+    <attribute id="LEAVETYPE_NAME" order="2" displayAttribute="false" attributeHierarchyActive="false">
+      <descriptions defaultDescription="NAME"/>
+      <keyMapping columnObjectName="CV_LEAVE_BALANCE" columnName="LEAVETYPE_NAME"/>
+    </attribute>
+    <attribute id="LEAVEYEAR" order="3" displayAttribute="false" attributeHierarchyActive="false">
+      <descriptions defaultDescription="YEAR"/>
+      <keyMapping columnObjectName="CV_LEAVE_BALANCE" columnName="LEAVEYEAR"/>
+    </attribute>
+  </attributes>
+  <calculatedAttributes/>
+  <baseMeasures>
+    <measure id="ENTITLEMENT" order="4" aggregationType="sum" measureType="simple">
+      <descriptions defaultDescription="ENTITLEMENT"/>
+      <measureMapping columnObjectName="CV_LEAVE_BALANCE" columnName="ENTITLEMENT"/>
+      <exceptionAggregationMetadata/>
+    </measure>
+    <measure id="DAYS_TAKEN" order="5" aggregationType="sum" measureType="simple">
+      <descriptions defaultDescription="DAYS_TAKEN"/>
+      <measureMapping columnObjectName="CV_LEAVE_BALANCE" columnName="DAYS_TAKEN"/>
+      <exceptionAggregationMetadata/>
+    </measure>
+    <measure id="DAYS_REMAINING" order="6" aggregationType="sum" measureType="simple">
+      <descriptions defaultDescription="DAYS_REMAINING"/>
+      <measureMapping columnObjectName="CV_LEAVE_BALANCE" columnName="DAYS_REMAINING"/>
+      <exceptionAggregationMetadata/>
+    </measure>
+  </baseMeasures>
+  <calculatedMeasures>
+    <measure id="PCT_USED" order="7" aggregationType="sum" measureType="simple" datatype="DECIMAL" length="9" scale="2" expressionLanguage="SQL">
+      <formula>CASE WHEN &quot;ENTITLEMENT&quot; = 0 THEN 0 ELSE &quot;DAYS_TAKEN&quot; * 100 / &quot;ENTITLEMENT&quot; END</formula>
+      <exceptionAggregationMetadata/>
+    </measure>
+  </calculatedMeasures>
+  <restrictedMeasures/>
+  <localDimensions/>
+</logicalModel>
+<layout>
+  <shapes>
+    <shape expanded="true" modelObjectName="Output" modelObjectNameSpace="MeasureGroup">
+      <upperLeftCorner x="40" y="85"/>
+    </shape>
+    
+  </shapes>
+</layout>
+</Calculation:scenario>

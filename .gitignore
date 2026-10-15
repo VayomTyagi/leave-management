@@ -2,6 +2,8 @@ node_modules/
 target/
 _out/
 gen/
+.gen/
+.deploy/
 
 .cdsrc-private.json
 default-*.json
@@ -17,3 +19,6 @@ mta_archives/
 
 # @cap-js/cds-typer
 @cds-models
+
+# auto generated wildcard
+db/.env

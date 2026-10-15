@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Calculation:scenario xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:Calculation="http://www.sap.com/ndb/BiModelCalculation.ecore" id="CV_LEAVE_BALANCE" applyPrivilegeType="NONE" dataCategory="CUBE" schemaVersion="3.0" hierarchyGeneration="SQL" outputViewType="Aggregation" cacheInvalidationPeriod="NONE" enforceSqlExecution="true" application="BAS">
+<descriptions defaultDescription="CV_LEAVE_BALANCE"/>
+<localVariables/>
+<variableMappings/>
+<dataSources>
+  <DataSource id="LEAVEMANAGEMENT_DB_LEAVEREQUESTS">
+    <resourceUri>LEAVEMANAGEMENT_DB_LEAVEREQUESTS</resourceUri>
+  </DataSource>
+  <DataSource id="LEAVEMANAGEMENT_DB_LEAVEBALANCES">
+    <resourceUri>LEAVEMANAGEMENT_DB_LEAVEBALANCES</resourceUri>
+  </DataSource>
+  <DataSource id="LEAVEMANAGEMENT_DB_EMPLOYEES">
+    <resourceUri>LEAVEMANAGEMENT_DB_EMPLOYEES</resourceUri>
+  </DataSource>
+  <DataSource id="LEAVEMANAGEMENT_DB_DEPARTMENTS">
+    <resourceUri>LEAVEMANAGEMENT_DB_DEPARTMENTS</resourceUri>
+  </DataSource>
+  <DataSource id="LEAVEMANAGEMENT_DB_LEAVETYPES">
+    <resourceUri>LEAVEMANAGEMENT_DB_LEAVETYPES</resourceUri>
+  </DataSource>
+</dataSources>
+<snapshotProcedures/>
+<calculationViews>
+  <calculationView xsi:type="Calculation:ProjectionView" id="Projection_Taken" filterExpressionLanguage="SQL">
+    <viewAttributes>
+      <viewAttribute id="EMPLOYEE_ID"/>
+      <viewAttribute id="LEAVETYPE_ID"/>
+      <viewAttribute id="STARTDATE"/>
+      <viewAttribute id="LEAVEDAYS"/>
+      <viewAttribute id="STATUS"/>
+    </viewAttributes>
+    <calculatedViewAttributes>
+      <calculatedViewAttribute id="LEAVEYEAR" datatype="INTEGER" expressionLanguage="SQL">
+        <formula>year(&quot;STARTDATE&quot;)</formula>
+      </calculatedViewAttribute>
+    </calculatedViewAttributes>
+    <input node="LEAVEMANAGEMENT_DB_LEAVEREQUESTS"/>
+    <filter>&quot;STATUS&quot; = 'APPROVED'</filter>
+  </calculationView>
+  <calculationView xsi:type="Calculation:ProjectionView" id="Projection_Balances">
+    <viewAttributes>
+      <viewAttribute id="EMPLOYEE_ID"/>
+      <viewAttribute id="LEAVETYPE_ID"/>
+      <viewAttribute id="BALANCE_YEAR"/>
+      <viewAttribute id="ENTITLEMENT"/>
+    </viewAttributes>
+    <calculatedViewAttributes/>
+    <input node="LEAVEMANAGEMENT_DB_LEAVEBALANCES">
+      <mapping xsi:type="Calculation:AttributeMapping" target="BALANCE_YEAR" source="YEAR"/>
+    </input>
+  </calculationView>
+  <calculationView xsi:type="Calculation:AggregationView" id="Aggregation_Taken">
+    <viewAttributes>
+      <viewAttribute id="EMPLOYEE_ID"/>
+      <viewAttribute id="LEAVETYPE_ID"/>
+      <viewAttribute id="LEAVEYEAR"/>
+      <viewAttribute id="TAKEN" aggregationType="sum"/>
+    </viewAttributes>
+    <calculatedViewAttributes/>
+    <restrictedViewAttributes/>
+    <input node="Projection_Taken">
+      <mapping xsi:type="Calculation:AttributeMapping" target="TAKEN" source="LEAVEDAYS"/>
+    </input>
+  </calculationView>
+  <calculationView xsi:type="Calculation:JoinView" id="Join_Balance_Taken" cardinality="CN_N" joinType="leftOuter">
+    <viewAttributes>
+      <viewAttribute id="EMPLOYEE_ID"/>
+      <viewAttribute id="LEAVETYPE_ID"/>
+      <viewAttribute id="BALANCE_YEAR" aggregationType="sum"/>
+      <viewAttribute id="ENTITLEMENT" aggregationType="sum"/>
+      <viewAttribute id="TAKEN" aggregationType="sum"/>
+      <viewAttribute hidden="true" id="JOIN$EMPLOYEE_ID$EMPLOYEE_ID"/>
+      <viewAttribute hidden="true" id="JOIN$LEAVETYPE_ID$LEAVETYPE_ID"/>
+      <viewAttribute hidden="true" id="JOIN$BALANCE_YEAR$LEAVEYEAR"/>
+    </viewAttributes>
+    <calculatedViewAttributes>
+      <calculatedViewAttribute id="DAYS_TAKEN" datatype="INTEGER" expressionLanguage="SQL">
+        <formula>ifnull(&quot;TAKEN&quot;,0)</formula>
+      </calculatedViewAttribute>
+      <calculatedViewAttribute id="DAYS_REMAINING" datatype="INTEGER" expressionLanguage="SQL">
+        <formula>&quot;ENTITLEMENT&quot; - ifnull(&quot;TAKEN&quot;,0)</formula>
+      </calculatedViewAttribute>
+    </calculatedViewAttributes>
+    <input node="Projection_Balances">
+      <mapping xsi:type="Calculation:AttributeMapping" target="EMPLOYEE_ID" source="EMPLOYEE_ID"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="LEAVETYPE_ID" source="LEAVETYPE_ID"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="BALANCE_YEAR" source="BALANCE_YEAR"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="ENTITLEMENT" source="ENTITLEMENT"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$EMPLOYEE_ID$EMPLOYEE_ID" source="EMPLOYEE_ID"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$LEAVETYPE_ID$LEAVETYPE_ID" source="LEAVETYPE_ID"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$BALANCE_YEAR$LEAVEYEAR" source="BALANCE_YEAR"/>
+    </input>
+    <input node="Aggregation_Taken">
+      <mapping xsi:type="Calculation:AttributeMapping" target="TAKEN" source="TAKEN"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$EMPLOYEE_ID$EMPLOYEE_ID" source="EMPLOYEE_ID"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$LEAVETYPE_ID$LEAVETYPE_ID" source="LEAVETYPE_ID"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$BALANCE_YEAR$LEAVEYEAR" source="LEAVEYEAR"/>
+    </input>
+    <joinAttribute name="JOIN$EMPLOYEE_ID$EMPLOYEE_ID"/>
+    <joinAttribute name="JOIN$LEAVETYPE_ID$LEAVETYPE_ID"/>
+    <joinAttribute name="JOIN$BALANCE_YEAR$LEAVEYEAR"/>
+  </calculationView>
+  <calculationView xsi:type="Calculation:JoinView" id="Join_Employee" cardinality="CN_N" joinType="inner">
+    <viewAttributes>
+      <viewAttribute id="LEAVETYPE_ID"/>
+      <viewAttribute id="BALANCE_YEAR" aggregationType="sum"/>
+      <viewAttribute id="ENTITLEMENT" aggregationType="sum"/>
+      <viewAttribute id="DAYS_TAKEN" aggregationType="sum"/>
+      <viewAttribute id="DAYS_REMAINING" aggregationType="sum"/>
+      <viewAttribute id="EMPLOYEENUMBER"/>
+      <viewAttribute id="FIRSTNAME"/>
+      <viewAttribute id="LASTNAME"/>
+      <viewAttribute id="DEPARTMENT_ID"/>
+      <viewAttribute hidden="true" id="JOIN$EMPLOYEE_ID$ID"/>
+    </viewAttributes>
+    <calculatedViewAttributes>
+      <calculatedViewAttribute id="EMPLOYEE_NAME" datatype="NVARCHAR" length="101" expressionLanguage="SQL">
+        <formula>&quot;FIRSTNAME&quot; || &quot;LASTNAME&quot;</formula>
+      </calculatedViewAttribute>
+    </calculatedViewAttributes>
+    <input node="Join_Balance_Taken">
+      <mapping xsi:type="Calculation:AttributeMapping" target="LEAVETYPE_ID" source="LEAVETYPE_ID"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="BALANCE_YEAR" source="BALANCE_YEAR"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="ENTITLEMENT" source="ENTITLEMENT"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="DAYS_TAKEN" source="DAYS_TAKEN"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="DAYS_REMAINING" source="DAYS_REMAINING"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$EMPLOYEE_ID$ID" source="EMPLOYEE_ID"/>
+    </input>
+    <input node="LEAVEMANAGEMENT_DB_EMPLOYEES">
+      <mapping xsi:type="Calculation:AttributeMapping" target="EMPLOYEENUMBER" source="EMPLOYEENUMBER"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="FIRSTNAME" source="FIRSTNAME"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="LASTNAME" source="LASTNAME"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="DEPARTMENT_ID" source="DEPARTMENT_ID"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$EMPLOYEE_ID$ID" source="ID"/>
+    </input>
+    <joinAttribute name="JOIN$EMPLOYEE_ID$ID"/>
+  </calculationView>
+  <calculationView xsi:type="Calculation:JoinView" id="Join_Departement" cardinality="CN_N" joinType="inner">
+    <viewAttributes>
+      <viewAttribute id="LEAVETYPE_ID"/>
+      <viewAttribute id="BALANCE_YEAR" aggregationType="sum"/>
+      <viewAttribute id="ENTITLEMENT" aggregationType="sum"/>
+      <viewAttribute id="DAYS_TAKEN" aggregationType="sum"/>
+      <viewAttribute id="DAYS_REMAINING" aggregationType="sum"/>
+      <viewAttribute id="EMPLOYEENUMBER"/>
+      <viewAttribute id="EMPLOYEE_NAME"/>
+      <viewAttribute id="ID"/>
+      <viewAttribute id="CREATEDAT" aggregationType="min"/>
+      <viewAttribute id="CREATEDBY"/>
+      <viewAttribute id="MODIFIEDAT" aggregationType="min"/>
+      <viewAttribute id="MODIFIEDBY"/>
+      <viewAttribute id="CODE"/>
+      <viewAttribute id="DEPARTEMENT_NAME"/>
+      <viewAttribute hidden="true" id="JOIN$DEPARTMENT_ID$ID"/>
+    </viewAttributes>
+    <calculatedViewAttributes/>
+    <input node="Join_Employee">
+      <mapping xsi:type="Calculation:AttributeMapping" target="LEAVETYPE_ID" source="LEAVETYPE_ID"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="BALANCE_YEAR" source="BALANCE_YEAR"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="ENTITLEMENT" source="ENTITLEMENT"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="DAYS_TAKEN" source="DAYS_TAKEN"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="DAYS_REMAINING" source="DAYS_REMAINING"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="EMPLOYEENUMBER" source="EMPLOYEENUMBER"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="EMPLOYEE_NAME" source="EMPLOYEE_NAME"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$DEPARTMENT_ID$ID" source="DEPARTMENT_ID"/>
+    </input>
+    <input node="LEAVEMANAGEMENT_DB_DEPARTMENTS">
+      <mapping xsi:type="Calculation:AttributeMapping" target="ID" source="ID"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="CREATEDAT" source="CREATEDAT"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="CREATEDBY" source="CREATEDBY"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="MODIFIEDAT" source="MODIFIEDAT"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="MODIFIEDBY" source="MODIFIEDBY"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="CODE" source="CODE"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="DEPARTEMENT_NAME" source="NAME"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$DEPARTMENT_ID$ID" source="ID"/>
+    </input>
+    <joinAttribute name="JOIN$DEPARTMENT_ID$ID"/>
+  </calculationView>
+  <calculationView xsi:type="Calculation:JoinView" id="Join_LeaveType" cardinality="CN_N" joinType="inner">
+    <viewAttributes>
+      <viewAttribute id="BALANCE_YEAR" aggregationType="sum"/>
+      <viewAttribute id="ENTITLEMENT" aggregationType="sum"/>
+      <viewAttribute id="DAYS_TAKEN" aggregationType="sum"/>
+      <viewAttribute id="DAYS_REMAINING" aggregationType="sum"/>
+      <viewAttribute id="EMPLOYEENUMBER"/>
+      <viewAttribute id="EMPLOYEE_NAME"/>
+      <viewAttribute id="DEPARTEMENT_NAME"/>
+      <viewAttribute id="LEAVETYPE_NAME"/>
+      <viewAttribute hidden="true" id="JOIN$LEAVETYPE_ID$ID"/>
+    </viewAttributes>
+    <calculatedViewAttributes/>
+    <input node="Join_Departement">
+      <mapping xsi:type="Calculation:AttributeMapping" target="BALANCE_YEAR" source="BALANCE_YEAR"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="ENTITLEMENT" source="ENTITLEMENT"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="DAYS_TAKEN" source="DAYS_TAKEN"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="DAYS_REMAINING" source="DAYS_REMAINING"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="EMPLOYEENUMBER" source="EMPLOYEENUMBER"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="DEPARTEMENT_NAME" source="DEPARTEMENT_NAME"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="EMPLOYEE_NAME" source="EMPLOYEE_NAME"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$LEAVETYPE_ID$ID" source="LEAVETYPE_ID"/>
+    </input>
+    <input node="LEAVEMANAGEMENT_DB_LEAVETYPES">
+      <mapping xsi:type="Calculation:AttributeMapping" target="LEAVETYPE_NAME" source="NAME"/>
+      <mapping xsi:type="Calculation:AttributeMapping" target="JOIN$LEAVETYPE_ID$ID" source="ID"/>
+    </input>
+    <joinAttribute name="JOIN$LEAVETYPE_ID$ID"/>
+  </calculationView>
+</calculationViews>
+
+<logicalModel id="Join_LeaveType">
+  <attributes>
+    <attribute id="EMPLOYEENUMBER" order="1" displayAttribute="false" attributeHierarchyActive="false">
+      <descriptions defaultDescription="EMPLOYEENUMBER"/>
+      <keyMapping columnObjectName="Join_LeaveType" columnName="EMPLOYEENUMBER"/>
+    </attribute>
+    <attribute id="EMPLOYEE_NAME" order="2" displayAttribute="false" attributeHierarchyActive="false">
+      <descriptions defaultDescription="EMPLOYEE_NAME"/>
+      <keyMapping columnObjectName="Join_LeaveType" columnName="EMPLOYEE_NAME"/>
+    </attribute>
+    <attribute id="DEPARTEMENT_NAME" order="3" displayAttribute="false" attributeHierarchyActive="false">
+      <descriptions defaultDescription="NAME"/>
+      <keyMapping columnObjectName="Join_LeaveType" columnName="DEPARTEMENT_NAME"/>
+    </attribute>
+    <attribute id="LEAVETYPE_NAME" order="4" displayAttribute="false" attributeHierarchyActive="false">
+      <descriptions defaultDescription="NAME"/>
+      <keyMapping columnObjectName="Join_LeaveType" columnName="LEAVETYPE_NAME"/>
+    </attribute>
+    <attribute id="LEAVEYEAR" order="5" displayAttribute="false" attributeHierarchyActive="false">
+      <descriptions defaultDescription="YEAR"/>
+      <keyMapping columnObjectName="Join_LeaveType" columnName="BALANCE_YEAR"/>
+    </attribute>
+  </attributes>
+  <calculatedAttributes/>
+  <baseMeasures>
+    <measure id="ENTITLEMENT" order="6" aggregationType="sum" measureType="simple">
+      <descriptions defaultDescription="ENTITLEMENT"/>
+      <measureMapping columnObjectName="Join_LeaveType" columnName="ENTITLEMENT"/>
+      <exceptionAggregationMetadata/>
+    </measure>
+    <measure id="DAYS_TAKEN" order="7" aggregationType="sum" measureType="simple">
+      <descriptions defaultDescription="DAYS_TAKEN"/>
+      <measureMapping columnObjectName="Join_LeaveType" columnName="DAYS_TAKEN"/>
+      <exceptionAggregationMetadata/>
+    </measure>
+    <measure id="DAYS_REMAINING" order="8" aggregationType="sum" measureType="simple">
+      <descriptions defaultDescription="DAYS_REMAINING"/>
+      <measureMapping columnObjectName="Join_LeaveType" columnName="DAYS_REMAINING"/>
+      <exceptionAggregationMetadata/>
+    </measure>
+  </baseMeasures>
+  <calculatedMeasures/>
+  <restrictedMeasures/>
+  <localDimensions/>
+</logicalModel>
+<layout>
+  <shapes>
+    <shape expanded="true" modelObjectName="Output" modelObjectNameSpace="MeasureGroup">
+      <upperLeftCorner x="225" y="112"/>
+    
+      <rectangleSize width="160"/>
+    </shape>
+    
+  
+    <shape expanded="true" modelObjectName="Projection_Taken" modelObjectNameSpace="CalculationView">
+      <upperLeftCorner x="91" y="941"/>
+      <rectangleSize height="30" width="160"/>
+    </shape>
+    <shape expanded="true" modelObjectName="Projection_Balances" modelObjectNameSpace="CalculationView">
+      <upperLeftCorner x="301" y="836"/>
+      <rectangleSize height="30" width="160"/>
+    </shape>
+  
+    <shape expanded="true" modelObjectName="Aggregation_Taken" modelObjectNameSpace="CalculationView">
+      <upperLeftCorner x="91" y="836"/>
+      <rectangleSize height="30" width="160"/>
+    </shape>
+    <shape expanded="true" modelObjectName="Join_Balance_Taken" modelObjectNameSpace="CalculationView">
+      <upperLeftCorner x="216" y="676"/>
+      <rectangleSize height="30" width="160"/>
+    </shape>
+    <shape modelObjectName="Projection_Balances" modelObjectNameSpace="Join_Balance_Taken" modelObjectType="JoinNodeInput">
+      <upperLeftCorner x="20" y="30"/>
+      <rectangleSize width="193"/>
+    </shape>
+    <shape modelObjectName="Aggregation_Taken" modelObjectNameSpace="Join_Balance_Taken" modelObjectType="JoinNodeInput">
+      <upperLeftCorner x="320" y="30"/>
+      <rectangleSize width="186"/>
+    </shape>
+    <shape expanded="true" modelObjectName="Join_Employee" modelObjectNameSpace="CalculationView">
+      <upperLeftCorner x="216" y="536"/>
+      <rectangleSize height="30" width="160"/>
+    </shape>
+    <shape modelObjectName="Join_Balance_Taken" modelObjectNameSpace="Join_Employee" modelObjectType="JoinNodeInput">
+      <upperLeftCorner x="20" y="30"/>
+      <rectangleSize width="203"/>
+    </shape>
+    <shape modelObjectName="LEAVEMANAGEMENT_DB_EMPLOYEES" modelObjectNameSpace="Join_Employee" modelObjectType="JoinNodeInput">
+      <upperLeftCorner x="320" y="30"/>
+      <rectangleSize width="295"/>
+    </shape>
+    <shape expanded="true" modelObjectName="Join_Departement" modelObjectNameSpace="CalculationView">
+      <upperLeftCorner x="223" y="376"/>
+      <rectangleSize height="30" width="160"/>
+    </shape>
+    <shape modelObjectName="Join_Employee" modelObjectNameSpace="Join_Departement" modelObjectType="JoinNodeInput">
+      <upperLeftCorner x="20" y="30"/>
+      <rectangleSize width="214"/>
+    </shape>
+    <shape modelObjectName="LEAVEMANAGEMENT_DB_DEPARTMENTS" modelObjectNameSpace="Join_Departement" modelObjectType="JoinNodeInput">
+      <upperLeftCorner x="320" y="30"/>
+      <rectangleSize width="311"/>
+    </shape>
+    <shape expanded="true" modelObjectName="Join_LeaveType" modelObjectNameSpace="CalculationView">
+      <upperLeftCorner x="223" y="236"/>
+      <rectangleSize height="30" width="160"/>
+    </shape>
+    <shape modelObjectName="Join_Departement" modelObjectNameSpace="Join_LeaveType" modelObjectType="JoinNodeInput">
+      <upperLeftCorner x="20" y="30"/>
+      <rectangleSize width="226"/>
+    </shape>
+    <shape modelObjectName="LEAVEMANAGEMENT_DB_LEAVETYPES" modelObjectNameSpace="Join_LeaveType" modelObjectType="JoinNodeInput">
+      <upperLeftCorner x="320" y="30"/>
+      <rectangleSize width="299"/>
+    </shape>
+  </shapes>
+</layout>
+</Calculation:scenario>

@@ -1,0 +1,55 @@
+### Reports run on HANA only
+### Start with: cds watch --profile hybrid
+
+@host = http://localhost:4004/report
+
+############ 1. Usage by department and leave type ############
+
+### Approved leave days by department and leave type, 2026
+GET {{host}}/UsageByDeptAndType?$filter=year eq 2026&$orderby=department,leaveType
+Authorization: Basic meera.iyer@company.com pass
+
+### Same report for 2025
+GET {{host}}/UsageByDeptAndType?$filter=year eq 2025
+Authorization: Basic meera.iyer@company.com pass
+
+
+############ 2. Leave balance per employee ############
+
+### Entitlement, taken and remaining for every employee, 2026
+GET {{host}}/LeaveBalances?$filter=year eq 2026&$orderby=department,employeeNumber,leaveType
+Authorization: Basic meera.iyer@company.com pass
+
+### One employee (Karan Malhotra, EMP012)
+GET {{host}}/LeaveBalances?$filter=year eq 2026 and employeeNumber eq 'EMP012'
+Authorization: Basic meera.iyer@company.com pass
+
+### Annual leave only, lowest remaining first
+GET {{host}}/LeaveBalances?$filter=year eq 2026 and leaveType eq 'Annual'&$orderby=daysRemaining asc&$top=5
+Authorization: Basic meera.iyer@company.com pass
+
+
+############ 3. Department utilization ############
+
+### Percentage of entitlement used per department, 2026
+GET {{host}}/DepartmentUtilization?$filter=year eq 2026&$orderby=percentUsed desc
+Authorization: Basic meera.iyer@company.com pass
+
+### Department utilization for 2025
+GET {{host}}/DepartmentUtilization?$filter=year eq 2025&$orderby=percentUsed desc
+Authorization: Basic meera.iyer@company.com pass
+
+### Department utilization by leave type, 2026
+GET {{host}}/DepartmentUtilizationByType?$filter=year eq 2026
+Authorization: Basic meera.iyer@company.com pass
+
+
+############ 4. Security tests ############
+
+### FAIL - an employee cannot read reports (expected 403)
+GET {{host}}/DepartmentUtilization
+Authorization: Basic priya.nair@company.com pass
+
+### FAIL - a manager without the HR role cannot read reports (expected 403)
+GET {{host}}/DepartmentUtilization
+Authorization: Basic arjun.rao@company.com pass
