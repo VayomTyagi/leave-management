@@ -1,7 +1,3 @@
-// ---- Native HANA calculation views (deployed from db/src/*.hdbcalculationview) ----
-// @cds.persistence.exists: CAP must not create a table/view for these, they already exist in HANA.
-// The entity names are the exact names of the calculation views and sit outside the namespace on purpose,
-// so that CAP reads from CV_... and not from leavemanagement_db_...
 
 @cds.persistence.exists
 @cds.persistence.calcview
