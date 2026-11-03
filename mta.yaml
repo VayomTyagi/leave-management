@@ -1,103 +1,155 @@
 _schema-version: 3.3.0
 ID: leave-management
+description: A simple CAP project.
 version: 1.0.0
-description: "A simple CAP project."
+modules:
+- name: leave-management-srv
+  type: nodejs
+  path: gen/srv
+  requires:
+  - name: leave-management-auth
+  - name: leave-management-db
+  - name: leave-management-connectivity
+  provides:
+  - name: srv-api
+    properties:
+      srv-url: ${default-url}
+  parameters:
+    buildpack: nodejs_buildpack
+    disk-quota: 512M
+    instances: 1
+    memory: 256M
+  build-parameters:
+    builder: npm-ci
+- name: leave-management-db-deployer
+  type: hdb
+  path: gen/db
+  requires:
+  - name: leave-management-db
+  parameters:
+    buildpack: nodejs_buildpack
+- name: leave-management
+  type: approuter.nodejs
+  path: .deploy/app-router
+  requires:
+  - name: srv-api
+    group: destinations
+    properties:
+      forwardAuthToken: true
+      name: srv-api
+      url: ~{srv-url}
+  - name: leave-management-auth
+  - name: leave-management-destination-service
+    group: destinations
+    properties:
+      forwardAuthToken: false
+      name: ui5
+      url: https://ui5.sap.com
+  provides:
+  - name: app-api
+    properties:
+      app-protocol: ${protocol}
+      app-uri: ${default-uri}
+  parameters:
+    disk-quota: 256M
+    instances: 1
+    keep-existing-routes: true
+    memory: 256M
+- name: leave-management-app-content
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: leave-management-repo-host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - leavemanagementemployeeemployeeapp.zip
+      name: leavemanagementemployeeemployeeapp
+      target-path: resources/
+- name: leavemanagementemployeeemployeeapp
+  type: html5
+  path: app/employee_app
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+resources:
+- name: leave-management-auth
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      oauth2-configuration:
+        credential-types:
+        - binding-secret
+        - x509
+        redirect-uris:
+        - https://*~{app-api/app-uri}/**
+      role-collections:
+      - description: generated
+        name: Manager (leave-management ${org}-${space})
+        role-template-references:
+        - $XSAPPNAME.Manager
+      - description: generated
+        name: HR (leave-management ${org}-${space})
+        role-template-references:
+        - $XSAPPNAME.HR
+      - description: generated
+        name: Employee (leave-management ${org}-${space})
+        role-template-references:
+        - $XSAPPNAME.Employee
+      tenant-mode: dedicated
+      xsappname: leave-management-${org}-${space}
+    path: ./xs-security.json
+    service: xsuaa
+    service-plan: application
+  requires:
+  - name: app-api
+- name: leave-management-db
+  type: com.sap.xs.hdi-container
+  parameters:
+    service: hana
+    service-plan: hdi-shared
+- name: leave-management-connectivity
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: connectivity
+    service-plan: lite
+- name: leave-management-repo-host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: leave-management-html5-service
+    service-plan: app-host
+- name: leave-management-destination-service
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: false
+      init_data:
+        instance:
+          destinations:
+          - Authentication: NoAuthentication
+            Name: ui5
+            ProxyType: Internet
+            Type: HTTP
+            URL: https://ui5.sap.com
+          existing_destinations_policy: update
+      version: 1.0.0
+    service: destination
+    service-name: leave-management-destination-service
+    service-plan: lite
 parameters:
+  deploy_mode: html5-repo
   enable-parallel-deployments: true
 build-parameters:
   before-all:
-    - builder: custom
-      commands:
-        - npm ci
-        - npx cds build --production
-modules:
-  - name: leave-management-srv
-    type: nodejs
-    path: gen/srv
-    parameters:
-      instances: 1
-      memory: 256M
-      disk-quota: 512M
-      buildpack: nodejs_buildpack
-    build-parameters:
-      builder: npm-ci
-    provides:
-      - name: srv-api
-        properties:
-          srv-url: ${default-url}
-    requires:
-      - name: leave-management-auth
-      - name: leave-management-db
-      - name: leave-management-connectivity
-
-  - name: leave-management-db-deployer
-    type: hdb
-    path: gen/db
-    parameters:
-      buildpack: nodejs_buildpack
-    requires:
-      - name: leave-management-db
-
-  - name: leave-management
-    type: approuter.nodejs
-    path: .deploy/app-router
-    parameters:
-      instances: 1
-      keep-existing-routes: true
-      disk-quota: 256M
-      memory: 256M
-    requires:
-      - name: srv-api
-        group: destinations
-        properties:
-          name: srv-api
-          url: ~{srv-url}
-          forwardAuthToken: true
-      - name: leave-management-auth
-    provides:
-      - name: app-api
-        properties:
-          app-protocol: ${protocol}
-          app-uri: ${default-uri}
-
-resources:
-  - name: leave-management-auth
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: xsuaa
-      service-plan: application
-      path: ./xs-security.json
-      config:
-        xsappname: leave-management-${org}-${space}
-        tenant-mode: dedicated
-        oauth2-configuration:
-          credential-types:
-            - "binding-secret"
-            - "x509"
-          redirect-uris:
-            - https://*~{app-api/app-uri}/**
-        role-collections:
-          - name: 'Manager (leave-management ${org}-${space})'
-            description: 'generated'
-            role-template-references:
-              - '$XSAPPNAME.Manager'
-          - name: 'HR (leave-management ${org}-${space})'
-            description: 'generated'
-            role-template-references:
-              - '$XSAPPNAME.HR'
-          - name: 'Employee (leave-management ${org}-${space})'
-            description: 'generated'
-            role-template-references:
-              - '$XSAPPNAME.Employee'
-    requires:
-      - name: app-api
-  - name: leave-management-db
-    type: com.sap.xs.hdi-container
-    parameters:
-      service: hana
-      service-plan: hdi-shared
-  - name: leave-management-connectivity
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: connectivity
-      service-plan: lite
+  - builder: custom
+    commands:
+    - npm ci
+    - npx cds build --production
